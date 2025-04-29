@@ -1,0 +1,6 @@
+[workspace]
+members = ["core", "utils"]
+
+[workspace.dependencies]
+log = "0.4"
+env_logger = "0.10"

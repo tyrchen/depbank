@@ -1,0 +1,29 @@
+[package]
+name = "depbank"
+version = "0.2.0"
+authors = ["Tyr Chen <tyr.chen@gmail.com>"]
+edition = "2024"
+license = "MIT"
+documentation = "https://docs.rs/depbank"
+repository = "https://github.com/tyrchen/depbank"
+homepage = "https://github.com/tyrchen/depbank"
+description = """
+A Rust CLI tool for generating AI-friendly code banks from dependencies.
+Automatically parses Cargo.toml files, resolves versions, and generates
+searchable documentation while calculating token counts.
+"""
+readme = "README.md"
+categories = ["development-tools", "command-line-utilities"]
+keywords = ["documentation", "dependency", "ai", "token-count", "codebank"]
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4.5.37", features = ["derive"] }
+codebank = "0.4.0"
+dirs = "6.0.0"
+serde = { version = "1", features = ["derive"] }
+tokenizers = { version = "0.21.1", features = ["http"] }
+toml = "0.8"
+
+[dev-dependencies]
+tempfile = "3.10.1"

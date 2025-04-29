@@ -1,0 +1,36 @@
+[package]
+name = "complex_project"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Regular version dependencies
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Dependencies with features
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.0", features = ["full"] }
+clap = { version = "4.5", features = ["derive", "color", "env"] }
+
+# Git dependencies
+custom_lib = { git = "https://github.com/example/custom_lib", tag = "v1.0.0" }
+
+# Path dependencies (commented out for fixture purposes)
+# local_lib = { path = "../local_lib" }
+
+# Dependencies with feature flags
+log = { version = "0.4", optional = true }
+tracing = { version = "0.1", optional = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+proptest = "1.0"
+
+[build-dependencies]
+cc = "1.0"
+
+[features]
+default = ["logging"]
+logging = ["log"]
+telemetry = ["tracing"]
