@@ -84,7 +84,7 @@
  */
 
 use anyhow::{Context, Result};
-use codebank::{Bank, BankStrategy, CodeBank};
+use codebank::{Bank, BankConfig, BankStrategy, CodeBank};
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::fs;
@@ -809,14 +809,19 @@ pub fn generate_code_bank(
     let code_bank = CodeBank::try_new().with_context(|| "Failed to create CodeBank instance")?;
 
     // Generate documentation for the source directory
-    let content = code_bank
-        .generate(source_path, BankStrategy::Summary)
-        .with_context(|| {
-            format!(
-                "Failed to generate code bank for: {}",
-                source_path.display()
-            )
-        })?;
+    // ignore directories: examples, tests, benches
+    let ignore_dirs = vec![
+        "examples".to_string(),
+        "tests".to_string(),
+        "benches".to_string(),
+    ];
+    let config = BankConfig::new(source_path, BankStrategy::Summary, ignore_dirs);
+    let content = code_bank.generate(&config).with_context(|| {
+        format!(
+            "Failed to generate code bank for: {}",
+            source_path.display()
+        )
+    })?;
 
     // Write the content to the output file
     fs::write(&output_file, content).with_context(|| {

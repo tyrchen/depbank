@@ -182,13 +182,14 @@ checksum = "f46ad14479a25103f283c0f10005961cf086d8dc42205bb44c46ac563475dca6"
 
 [[package]]
 name = "codebank"
-version = "0.4.2"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b8f3b3df29f661a270ee30966dce7ab99b224cad683e4ba0e5d08c59e615df1"
+checksum = "3492685d380834f98ea2dfbfe0c1f89f6e0e6ea9d7b62d576c09fc681a8ccca6"
 dependencies = [
  "anyhow",
  "ignore",
  "regex",
+ "serde",
  "thiserror 2.0.12",
  "tracing",
  "tree-sitter",
@@ -289,7 +290,7 @@ dependencies = [
 
 [[package]]
 name = "depbank"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "clap",
