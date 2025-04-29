@@ -182,9 +182,9 @@ checksum = "f46ad14479a25103f283c0f10005961cf086d8dc42205bb44c46ac563475dca6"
 
 [[package]]
 name = "codebank"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8935149a11e56cedc4ea75777ced9e45a9303cd342b50f52a1e0a0279c511f9"
+checksum = "398de518033066f9f60fdfa5042a5bf9426a92d1117ed8ec44c0d01ef066818b"
 dependencies = [
  "anyhow",
  "ignore",
@@ -290,7 +290,7 @@ dependencies = [
 
 [[package]]
 name = "depbank"
-version = "0.2.5"
+version = "0.2.6"
 dependencies = [
  "anyhow",
  "clap",
