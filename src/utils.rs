@@ -62,16 +62,30 @@ fn analyze_dependencies(project_path: &Path, _dry_run: bool) -> Result<Dependenc
         return Err(anyhow::anyhow!("No Cargo.toml files found"));
     }
 
-    // Extract dependencies from the first Cargo.toml
-    let first_cargo_toml = &cargo_toml_files[0];
-    let dependency_info = extract_dependency_info(first_cargo_toml)?;
-    println!("Found {} dependencies", dependency_info.len());
+    // Extract dependencies from *all* found Cargo.toml files
+    let mut dependency_info = DependencyCollection::new();
+    let mut unique_deps_for_reporting = HashSet::new(); // Track unique dep names for reporting
 
-    // Find Cargo.lock
+    for cargo_toml_path in &cargo_toml_files {
+        let file_deps = extract_dependency_info(cargo_toml_path)?;
+        for dep in file_deps.iter() {
+            // Add to the main collection
+            dependency_info.add(dep.clone());
+            // Track unique names for reporting count
+            unique_deps_for_reporting.insert(dep.name.clone());
+        }
+    }
+
+    println!(
+        "Found {} unique dependencies",
+        unique_deps_for_reporting.len()
+    );
+
+    // Find Cargo.lock - should still be at the workspace root
     let cargo_lock_path = find_cargo_lock(project_path)?;
     println!("Found Cargo.lock");
 
-    // Resolve exact versions from Cargo.lock
+    // Resolve exact versions from Cargo.lock using the aggregated dependency info
     let resolved_versions = resolve_dependency_versions(cargo_lock_path, &dependency_info)?;
     println!("Resolved {} versions", resolved_versions.len());
 
@@ -80,20 +94,29 @@ fn analyze_dependencies(project_path: &Path, _dry_run: bool) -> Result<Dependenc
 
     // Check which dependencies are available locally
     let mut available_deps = DependencyCollection::new();
+    // Keep track of names we've already added to available_deps to avoid duplicates if
+    // the same dep name appears in multiple Cargo.toml files after version resolution.
+    let mut added_names = HashSet::new();
     for dependency in resolved_versions.iter() {
-        if is_dependency_available(&registry_path, dependency) {
+        if !added_names.contains(&dependency.name)
+            && is_dependency_available(&registry_path, dependency)
+        {
             available_deps.add(dependency.clone());
+            added_names.insert(dependency.name.clone());
         }
     }
 
     println!(
-        "{}/{} dependencies available locally",
+        "{}/{} unique dependencies available locally",
         available_deps.len(),
-        resolved_versions.len()
+        unique_deps_for_reporting.len() // Report against unique names found initially
     );
 
     if available_deps.is_empty() {
-        return Err(anyhow::anyhow!("No dependencies available locally"));
+        // Adjust the error message to be more accurate in a workspace context
+        return Err(anyhow::anyhow!(
+            "No resolved dependencies available locally in the Cargo registry"
+        ));
     }
 
     // Return the available dependencies

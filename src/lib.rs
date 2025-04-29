@@ -449,12 +449,23 @@ fn extract_version_from_spec(spec: &CargoDepSpec) -> String {
     match spec {
         CargoDepSpec::Simple(version) => version.clone(),
         CargoDepSpec::Detailed(table) => {
+            // Check for workspace = true first
+            if let Some(workspace) = table.get("workspace") {
+                if workspace.as_bool().unwrap_or(false) {
+                    // Use a placeholder. The actual version comes from Cargo.lock or workspace definition.
+                    // For `resolve_dependency_versions`, we just need the name.
+                    // If we needed the *constraint* from the workspace root, we'd need to parse that too.
+                    return "workspace".to_string();
+                }
+            }
+            // Otherwise, look for an inline version
             if let Some(version) = table.get("version") {
                 if let Some(v) = version.as_str() {
                     return v.to_string();
                 }
             }
-            "*".to_string() // Default if no version found
+            // Default if neither workspace nor version is specified clearly
+            "*".to_string()
         }
     }
 }
@@ -1607,8 +1618,71 @@ dep3 = "1.5"
     }
 
     #[test]
+    fn test_find_dependencies_in_workspace() -> Result<()> {
+        // Use the existing workspace fixture
+        let fixture_path = Path::new("fixtures/workspace_project");
+        assert!(fixture_path.exists(), "Workspace fixture does not exist");
+
+        // Find all Cargo.toml files within the fixture
+        let cargo_toml_files = find_cargo_toml_files(fixture_path)?;
+
+        // Expecting 3: root, core, utils
+        assert_eq!(cargo_toml_files.len(), 3);
+
+        // Collect dependencies from all found files
+        let mut dependency_info = DependencyCollection::new();
+        let mut unique_deps = HashSet::new();
+        for cargo_toml_path in &cargo_toml_files {
+            let file_deps = extract_dependency_info(cargo_toml_path)?;
+            for dep in file_deps.iter() {
+                dependency_info.add(dep.clone());
+                unique_deps.insert(dep.name.clone());
+            }
+        }
+
+        // Check unique dependencies identified (from core and utils)
+        // Based on debug output from test run: tokio, serde, log, chrono, env_logger
+        assert!(unique_deps.contains("serde"));
+        assert!(unique_deps.contains("tokio"));
+        assert!(unique_deps.contains("log"));
+        assert!(unique_deps.contains("chrono"));
+        assert!(unique_deps.contains("env_logger"));
+        assert_eq!(unique_deps.len(), 5, "Expected 5 unique dependencies");
+
+        // Check the DependencyCollection entries (can have duplicates before resolution)
+        assert!(dependency_info.contains_name("serde"));
+        assert!(dependency_info.contains_name("tokio"));
+        assert!(dependency_info.contains_name("log")); // Present in both core and utils
+        assert!(dependency_info.contains_name("chrono"));
+        assert!(dependency_info.contains_name("env_logger"));
+
+        // Verify specific versions from the individual manifests
+        let serde_dep = dependency_info.get("serde").unwrap();
+        assert_eq!(serde_dep.version, "1.0"); // From core/Cargo.toml
+
+        let tokio_dep = dependency_info.get("tokio").unwrap();
+        assert_eq!(tokio_dep.version, "1.0"); // From core/Cargo.toml
+
+        let log_deps: Vec<&Dependency> =
+            dependency_info.iter().filter(|d| d.name == "log").collect();
+        assert_eq!(log_deps.len(), 2, "Expected log defined in core and utils");
+        // Both specify workspace = true initially
+        assert!(log_deps.iter().all(|d| d.version == "workspace"));
+
+        let chrono_dep = dependency_info.get("chrono").unwrap();
+        assert_eq!(chrono_dep.version, "0.4"); // From utils/Cargo.toml
+
+        let env_logger_dep = dependency_info.get("env_logger").unwrap();
+        assert_eq!(env_logger_dep.version, "workspace"); // From utils/Cargo.toml
+
+        Ok(())
+    }
+
+    #[test]
     fn test_is_dependency_available() {
-        // This test uses a mock approach since we can't easily create the registry structure
+        // Create a mock registry directory
+        let temp_dir = tempdir().unwrap();
+        let _mock_registry = temp_dir.path(); // Prefix with underscore to silence warning
 
         // Non-existent path should return false
         let registry_path = Path::new("/non/existent/path");
