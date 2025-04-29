@@ -106,6 +106,7 @@ fn generate_code_bank_readme(
     dependencies: &DependencyCollection,
     code_bank_files_count: usize,
 ) -> Result<()> {
+    println!("Calculating tokens for generated code banks (may take a while)...");
     // Calculate tokens for generated code banks
     let file_stats = calculate_directory_tokens(output_dir, Some("md"))?;
 

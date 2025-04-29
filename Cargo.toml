@@ -1,6 +1,6 @@
 [package]
 name = "depbank"
-version = "0.2.3"
+version = "0.2.4"
 authors = ["Tyr Chen <tyr.chen@gmail.com>"]
 edition = "2024"
 license = "MIT"
@@ -21,9 +21,9 @@ name = "depbank"
 path = "src/main.rs"
 
 [dependencies]
+codebank = { version = "0.4", default-features = false }
 anyhow = "1"
 clap = { version = "4.5.37", features = ["derive"] }
-codebank = { version = "0.4", default-features = false }
 dirs = "6.0.0"
 serde = { version = "1", features = ["derive"] }
 tokenizers = { version = "0.21.1", features = ["http"] }
